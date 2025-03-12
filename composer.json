@@ -40,7 +40,7 @@
         "ext-zlib": "*",
         "friendsofphp/php-cs-fixer": "^3.71.0",
         "infection/infection": "^0.29.14",
-        "phpbench/phpbench": "^1.4.0",
+        "phpbench/phpbench": "^1.4.1",
         "phpstan/phpstan": "^2.1.8",
         "phpstan/phpstan-phpunit": "^2.0.4",
         "phpstan/phpstan-strict-rules": "^2.0.3",
