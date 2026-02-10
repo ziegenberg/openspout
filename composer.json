@@ -41,9 +41,9 @@
         "infection/infection": "^0.32.4",
         "phpbench/phpbench": "^1.4.3",
         "phpstan/phpstan": "^2.1.38",
-        "phpstan/phpstan-phpunit": "^2.0.13",
+        "phpstan/phpstan-phpunit": "^2.0.14",
         "phpstan/phpstan-strict-rules": "^2.0.8",
-        "phpunit/phpunit": "^12.5.10"
+        "phpunit/phpunit": "^12.5.11"
     },
     "suggest": {
         "ext-iconv": "To handle non UTF-8 CSV files (if \"php-mbstring\" is not already installed or is too limited)",
