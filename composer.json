@@ -42,7 +42,7 @@
         "phpbench/phpbench": "^1.4.3",
         "phpstan/phpstan": "^2.1.38",
         "phpstan/phpstan-phpunit": "^2.0.14",
-        "phpstan/phpstan-strict-rules": "^2.0.8",
+        "phpstan/phpstan-strict-rules": "^2.0.9",
         "phpunit/phpunit": "^12.5.11"
     },
     "suggest": {
