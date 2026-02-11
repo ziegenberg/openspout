@@ -37,12 +37,12 @@
     },
     "require-dev": {
         "ext-zlib": "*",
-        "friendsofphp/php-cs-fixer": "^3.93.1",
+        "friendsofphp/php-cs-fixer": "^3.94.0",
         "infection/infection": "^0.32.4",
         "phpbench/phpbench": "^1.4.3",
-        "phpstan/phpstan": "^2.1.38",
-        "phpstan/phpstan-phpunit": "^2.0.14",
-        "phpstan/phpstan-strict-rules": "^2.0.9",
+        "phpstan/phpstan": "^2.1.39",
+        "phpstan/phpstan-phpunit": "^2.0.15",
+        "phpstan/phpstan-strict-rules": "^2.0.10",
         "phpunit/phpunit": "^12.5.11"
     },
     "suggest": {
