@@ -39,7 +39,7 @@
         "ext-fileinfo": "*",
         "ext-zlib": "*",
         "friendsofphp/php-cs-fixer": "^3.95.2",
-        "infection/infection": "^0.33.1",
+        "infection/infection": "^0.33.2",
         "phpbench/phpbench": "^1.6.1",
         "phpstan/phpstan": "^2.1.55",
         "phpstan/phpstan-phpunit": "^2.0.16",
