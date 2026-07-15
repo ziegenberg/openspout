@@ -11,13 +11,16 @@ use DOMElement;
 use DOMNode;
 use finfo;
 use OpenSpout\Common\Entity\Cell;
+use OpenSpout\Common\Entity\Cell\ImageCell;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Exception\IOException;
+use OpenSpout\Common\Exception\UnsupportedTypeException;
 use OpenSpout\Common\Helper\StringHelper;
 use OpenSpout\Reader\Wrapper\XMLReader;
 use OpenSpout\TestUsingResource;
 use OpenSpout\Writer\AutoFilter;
 use OpenSpout\Writer\Common\Entity\Sheet;
+use OpenSpout\Writer\Common\Helper\ImageHelperTrait;
 use OpenSpout\Writer\Common\Manager\SheetManager;
 use OpenSpout\Writer\Exception\SheetNotFoundException;
 use OpenSpout\Writer\Exception\WriterNotOpenedException;
@@ -31,6 +34,8 @@ use ReflectionHelper;
  */
 final class WriterTest extends TestCase
 {
+    use ImageHelperTrait;
+
     public function testAddRowShouldThrowExceptionIfCannotOpenAFileForWriting(): void
     {
         $options = new Options(tempFolder: (new TestUsingResource())->getTempFolderPath());
@@ -485,6 +490,18 @@ final class WriterTest extends TestCase
         $databaseRangeSecondNode = $databaseRangeNodes->item(1);
         $targetRangeAddress = $databaseRangeSecondNode->getAttribute('table:target-range-address');
         self::assertSame("'Sheet2'.A1:'Sheet2'.AA11", $targetRangeAddress);
+    }
+
+    public function testWriteImageCellShouldThrowException(): void
+    {
+        $fileName = 'test_image_cell_throws.ods';
+        $resourcePath = (new TestUsingResource())->getGeneratedResourcePath($fileName);
+        $options = new Options(tempFolder: (new TestUsingResource())->getTempFolderPath());
+        $writer = new Writer($options);
+        $writer->openToFile($resourcePath);
+
+        $this->expectException(UnsupportedTypeException::class);
+        $writer->addRow(new Row([new ImageCell($this->testImagePath, 1, 1)]));
     }
 
     /**

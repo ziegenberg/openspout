@@ -19,6 +19,7 @@ use OpenSpout\Common\Exception\IOException;
 use OpenSpout\Reader\Wrapper\XMLReader;
 use OpenSpout\TestUsingResource;
 use OpenSpout\Writer\AutoFilter;
+use OpenSpout\Writer\Common\Helper\ImageHelperTrait;
 use OpenSpout\Writer\Exception\WriterNotOpenedException;
 use OpenSpout\Writer\XLSX\Manager\WorkbookManager;
 use OpenSpout\Writer\XLSX\Options\HeaderFooter;
@@ -36,12 +37,15 @@ use OpenSpout\Writer\XLSX\Validation\ValidationDisplay;
 use OpenSpout\Writer\XLSX\Validation\ValidationOperator;
 use PHPUnit\Framework\TestCase;
 use ReflectionHelper;
+use ZipArchive;
 
 /**
  * @internal
  */
 final class WriterTest extends TestCase
 {
+    use ImageHelperTrait;
+
     public function testWriteTextRunFormatting(): void
     {
         $fileName = 'test_text_run_formatting.xlsx';
@@ -1446,6 +1450,80 @@ final class WriterTest extends TestCase
         self::assertStringContainsString('type="list"', $sheet2XmlContents, 'Sheet 2 should have a list validation');
         self::assertStringContainsString('$B$2:$B$10', $sheet2XmlContents, 'Sheet 2 should reference column B');
         self::assertStringNotContainsString('$A$2:$A$10"', $sheet2XmlContents, 'Sheet 2 should not reference sheet 1 range');
+    }
+
+    public function testWriteImageCellEmbedsDrawingFiles(): void
+    {
+        $fileName = 'test_write_image_cell.xlsx';
+        $resourcePath = (new TestUsingResource())->getGeneratedResourcePath($fileName);
+        $options = new Options(tempFolder: (new TestUsingResource())->getTempFolderPath());
+        $writer = new Writer($options);
+        $writer->openToFile($resourcePath);
+        $writer->addRow(new Row([new Cell\ImageCell($this->testImagePath, 1, 1)]));
+        $writer->close();
+
+        $sheetXml = file_get_contents('zip://'.$resourcePath.'#xl/worksheets/sheet1.xml');
+        self::assertNotFalse($sheetXml);
+        self::assertStringContainsString('<drawing r:id="rIdDrawing1"', $sheetXml);
+
+        $drawingXml = file_get_contents('zip://'.$resourcePath.'#xl/drawings/drawing1.xml');
+        self::assertNotFalse($drawingXml, 'Drawing XML file should exist in the archive');
+        self::assertStringContainsString('<xdr:oneCellAnchor>', $drawingXml);
+        self::assertStringContainsString('r:embed="rId1"', $drawingXml);
+
+        $drawingRelsXml = file_get_contents('zip://'.$resourcePath.'#xl/drawings/_rels/drawing1.xml.rels');
+        self::assertNotFalse($drawingRelsXml, 'Drawing rels file should exist in the archive');
+        self::assertStringContainsString('relationships/image', $drawingRelsXml);
+        self::assertStringContainsString('image1.png', $drawingRelsXml);
+
+        $contentTypes = file_get_contents('zip://'.$resourcePath.'#[Content_Types].xml');
+        self::assertNotFalse($contentTypes);
+        self::assertStringContainsString('drawing+xml', $contentTypes);
+        self::assertStringContainsString('image/png', $contentTypes);
+
+        $sheetRels = file_get_contents('zip://'.$resourcePath.'#xl/worksheets/_rels/sheet1.xml.rels');
+        self::assertNotFalse($sheetRels);
+        self::assertStringContainsString('rIdDrawing1', $sheetRels);
+        self::assertStringContainsString('drawings/drawing1.xml', $sheetRels);
+    }
+
+    public function testDuplicateImageCellIsEmbeddedOnlyOnce(): void
+    {
+        $fileName = 'test_image_cell_dedup.xlsx';
+        $resourcePath = (new TestUsingResource())->getGeneratedResourcePath($fileName);
+        $options = new Options(tempFolder: (new TestUsingResource())->getTempFolderPath());
+        $writer = new Writer($options);
+        $writer->openToFile($resourcePath);
+        // Add the same image in two different cells
+        $writer->addRow(new Row([new Cell\ImageCell($this->testImagePath, 1, 1)]));
+        $writer->addRow(new Row([new Cell\ImageCell($this->testImagePath, 1, 1)]));
+        $writer->close();
+
+        // The drawing should contain two anchors (one per cell)
+        $drawingXml = file_get_contents('zip://'.$resourcePath.'#xl/drawings/drawing1.xml');
+        self::assertNotFalse($drawingXml);
+        self::assertSame(2, substr_count($drawingXml, '<xdr:oneCellAnchor>'), 'There should be two drawing anchors');
+        // Both anchors must reference the same relationship
+        self::assertSame(2, substr_count($drawingXml, 'r:embed="rId1"'), 'Both anchors should reference rId1');
+
+        // The drawing rels file must contain exactly one image relationship
+        $drawingRelsXml = file_get_contents('zip://'.$resourcePath.'#xl/drawings/_rels/drawing1.xml.rels');
+        self::assertNotFalse($drawingRelsXml);
+        self::assertSame(1, substr_count($drawingRelsXml, 'relationships/image'), 'The image should only be referenced once in drawing rels');
+        self::assertStringContainsString('image1.png', $drawingRelsXml);
+
+        // The archive must contain the media file exactly once
+        $zip = new ZipArchive();
+        $zip->open($resourcePath);
+        $mediaCount = 0;
+        for ($i = 0; $i < $zip->numFiles; ++$i) {
+            $name = $zip->getNameIndex($i);
+            if (false !== $name && str_starts_with($name, 'xl/media/')) {
+                ++$mediaCount;
+            }
+        }
+        $zip->close();
+        self::assertSame(1, $mediaCount, 'The same image should be stored only once in the archive');
     }
 
     /**

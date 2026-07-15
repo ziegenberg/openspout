@@ -6,10 +6,13 @@ namespace OpenSpout\Writer\CSV;
 
 use DateInterval;
 use DateTime;
+use OpenSpout\Common\Entity\Cell\ImageCell;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Exception\IOException;
+use OpenSpout\Common\Exception\UnsupportedTypeException;
 use OpenSpout\Common\Helper\EncodingHelper;
 use OpenSpout\TestUsingResource;
+use OpenSpout\Writer\Common\Helper\ImageHelperTrait;
 use OpenSpout\Writer\Exception\WriterNotOpenedException;
 use PHPUnit\Framework\TestCase;
 
@@ -18,6 +21,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class WriterTest extends TestCase
 {
+    use ImageHelperTrait;
+
     public function testWriteShouldThrowExceptionIfCannotOpenFileForWriting(): void
     {
         $fileName = 'file_that_wont_be_written.csv';
@@ -271,6 +276,17 @@ final class WriterTest extends TestCase
         self::assertSame(5, $writer->getWrittenRowCount());
         $writer->close();
         self::assertSame(5, $writer->getWrittenRowCount());
+    }
+
+    public function testWriteImageCellShouldThrowException(): void
+    {
+        $fileName = 'test_image_cell_throws.csv';
+        $resourcePath = (new TestUsingResource())->getGeneratedResourcePath($fileName);
+        $writer = new Writer();
+        $writer->openToFile($resourcePath);
+
+        $this->expectException(UnsupportedTypeException::class);
+        $writer->addRow(new Row([new ImageCell($this->testImagePath, 1, 1)]));
     }
 
     /**
