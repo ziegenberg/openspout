@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace OpenSpout\Writer\XLSX\Manager;
 
+use FilesystemIterator;
 use OpenSpout\Common\Helper\Escaper\XLSX as XLSXEscaper;
 use OpenSpout\Common\Helper\StringHelper;
 use OpenSpout\Writer\Common\Entity\Sheet;
 use OpenSpout\Writer\Common\Entity\Worksheet;
 use OpenSpout\Writer\Common\Manager\SheetManager;
 use PHPUnit\Framework\TestCase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionProperty;
 
 /**
@@ -18,16 +21,13 @@ use ReflectionProperty;
 final class CommentsManagerTest extends TestCase
 {
     /**
-     * Regression test for https://github.com/openspout/openspout/issues/392
-     *
-     * During PHP shutdown (e.g. after a client disconnect during a slow export) the
-     * runtime may free file handles before object destructors run. In that case the
-     * pointers stored in CommentsManager are no longer valid resources by the time
-     * closeWorksheetCommentFiles() is called, and fwrite()/fclose() on them throws a
-     * TypeError. closeWorksheetCommentFiles() must guard against this with is_resource().
+     * @see https://github.com/openspout/openspout/issues/392
      */
     public function testCloseWorksheetCommentFilesShouldNotThrowTypeErrorOnFreedHandles(): void
     {
+        // No value assertions: reaching this point without a TypeError is the goal.
+        self::expectNotToPerformAssertions();
+
         $tempFolder = sys_get_temp_dir().'/openspout-comments-'.uniqid('', true);
         mkdir($tempFolder.'/drawings', 0o700, true);
 
@@ -46,9 +46,6 @@ final class CommentsManagerTest extends TestCase
 
             // Must not throw a TypeError even though the stored handles were freed.
             $commentsManager->closeWorksheetCommentFiles($worksheet);
-
-            // Reaching this point is the expected (fixed) behaviour.
-            self::assertTrue(true);
         } finally {
             $this->removeFolderRecursively($tempFolder);
         }
@@ -71,9 +68,9 @@ final class CommentsManagerTest extends TestCase
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($folderPath, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($folderPath, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST
         );
 
         foreach ($iterator as $item) {

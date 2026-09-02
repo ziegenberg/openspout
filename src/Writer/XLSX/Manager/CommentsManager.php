@@ -116,12 +116,12 @@ final class CommentsManager
 
         // guards against TypeError during PHP shutdown: the runtime may free
         // file handles before destructors run, leaving these pointers invalid
-        if (is_resource($commentFp)) {
+        if (\is_resource($commentFp)) {
             fwrite($commentFp, self::COMMENTS_XML_FILE_FOOTER);
             fclose($commentFp);
         }
 
-        if (is_resource($drawingFp)) {
+        if (\is_resource($drawingFp)) {
             fwrite($drawingFp, self::DRAWINGS_VML_FILE_FOOTER);
             fclose($drawingFp);
         }
