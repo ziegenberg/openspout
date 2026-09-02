@@ -128,7 +128,7 @@ final class SheetTest extends TestCase
         self::assertStringContainsString('<sheetFormatPr', $xmlContents, 'No sheetFormatPr tag found in sheet');
         self::assertStringContainsString(' defaultColWidth="10', $xmlContents, 'No default column width found in sheet');
         self::assertStringContainsString(' defaultRowHeight="20', $xmlContents, 'No default row height found in sheet');
-        self::assertStringContainsString(' customHeight="1"', $xmlContents, 'No row height override flag found in row');
+        self::assertStringNotContainsString('customHeight="1"', $xmlContents, 'Default-height row must not be marked as a custom (fixed) height, so auto-height is preserved.');
     }
 
     public function testWritesDefaultRequiredRowHeightIfOmitted(): void

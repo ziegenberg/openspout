@@ -539,6 +539,34 @@ final class WriterTest extends TestCase
         self::assertSame('1', $DOMNode->getAttribute('customHeight'), 'Row does not have custom height flag set.');
     }
 
+    /**
+     * Repro of upstream issue #367.
+     *
+     * @see https://github.com/openspout/openspout/issues/367
+     */
+    public function testAddRowWithDefaultHeightShouldKeepAutoHeight(): void
+    {
+        $fileName = 'test_add_row_with_default_height_should_keep_auto_height.xlsx';
+
+        $this->writeToXLSXFile([Row::fromValues(['xlsx--11']), Row::fromValues(['xlsx--12'], 15)], $fileName);
+
+        $xmlReader = $this->getXmlReaderForSheetFromXmlFile($fileName, '1');
+
+        // Row 1: default (auto) height -> neither ht nor customHeight.
+        $xmlReader->readUntilNodeFound('row');
+        $autoRow = $xmlReader->expand();
+        self::assertInstanceOf(DOMElement::class, $autoRow);
+        self::assertSame('', $autoRow->getAttribute('ht'), 'Auto-height row must not declare a fixed height.');
+        self::assertFalse($autoRow->hasAttribute('customHeight'), 'Auto-height row must not set a customHeight flag, so it keeps auto-height behavior in Excel Online.');
+
+        // Row 2: explicit height -> ht + customHeight="1".
+        $xmlReader->next('row');
+        $fixedRow = $xmlReader->expand();
+        self::assertInstanceOf(DOMElement::class, $fixedRow);
+        self::assertSame('15', $fixedRow->getAttribute('ht'), 'Explicit row height does not equal given value.');
+        self::assertSame('1', $fixedRow->getAttribute('customHeight'), 'Explicitly sized row must be flagged as custom height.');
+    }
+
     public function testCloseShouldAddMergeCellTags(): void
     {
         $fileName = 'test_add_row_should_support_column_widths.xlsx';

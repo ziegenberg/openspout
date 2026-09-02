@@ -112,8 +112,19 @@ final readonly class WorksheetManager implements WorksheetManagerInterface
         $numCells = $row->getNumCells();
 
         $rowHeight = $row->height;
-        $hasCustomHeight = ($this->options->DEFAULT_ROW_HEIGHT > 0 || $rowHeight > 0) ? '1' : '0';
-        $rowXML = "<row r=\"{$rowIndexOneBased}\" spans=\"1:{$numCells}\" ".($rowHeight > 0 ? "ht=\"{$rowHeight}\" " : '')."customHeight=\"{$hasCustomHeight}\">";
+
+        // A row only receives an explicit height (plus the customHeight flag) when one is
+        // actually set. Auto-height rows (Row::DEFAULT_HEIGHT) must carry neither `ht`
+        // nor `customHeight`, otherwise strict viewers (e.g. Excel Online, Teams/SharePoint)
+        // treat them as fixed-height instead of auto-fitting their content.
+        // The DEFAULT_ROW_HEIGHT option only affects the sheet's <sheetFormatPr
+        // defaultRowHeight>; it must not mark individual rows as custom-height.
+        // See https://github.com/openspout/openspout/issues/367
+        $rowXML = "<row r=\"{$rowIndexOneBased}\" spans=\"1:{$numCells}\"";
+        if ($rowHeight > 0) {
+            $rowXML .= " ht=\"{$rowHeight}\" customHeight=\"1\"";
+        }
+        $rowXML .= '>';
 
         foreach ($row->cells as $columnIndexZeroBased => $cell) {
             if ($cell instanceof Cell\ImageCell) {
